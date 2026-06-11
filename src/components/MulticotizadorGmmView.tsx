@@ -2,18 +2,135 @@ import React, { useState } from 'react';
 import { 
   Plus, Trash2, Save, Check, AlertCircle, ChevronDown, 
   Archive, ClipboardList, UserPlus, Flame, Users, Sparkles,
-  Printer, Copy, FileText, CheckSquare, XSquare, Layers, ShieldAlert, HelpCircle
+  Printer, Copy, FileText, CheckSquare, XSquare, Layers, ShieldAlert, HelpCircle, Gift, Info
 } from 'lucide-react';
 import { QuotePerson, TariffPackage, BnpTariffPackage, FormaPago, RelationType, GenderType, MultiGmmQuote } from '../types';
 import { MultiGmmOptionConfig } from '../lib/calcOrchestrator';
 import { NormalizedResult, BXPLUS_COVERAGES_INFO, BXPLUS_OPCIONALES_DEFAULT } from '../lib/calcEngineBxPlus';
+
+const HELP_TEXTS = {
+  // BX+ Specific
+  bx_zona: {
+    title: 'Zona Geográfica BX+',
+    desc: 'Determina el tabulador de costos hospitalarios aplicable según tu lugar de residencia. Zona Metropolitana incluye CDMX y Área Metropolitana.'
+  },
+  bx_nivel_hospitalario: {
+    title: 'Nivel Hospitalario BX+',
+    desc: 'Catálogo de hospitales autorizados para tu atención. Diamante ofrece acceso a todos los hospitales del convenio; Esmeralda es la red básica.'
+  },
+  bx_tabulador: {
+    title: 'Tabulador Médico BX+',
+    desc: 'Límite de honorarios quirúrgicos y médicos que la aseguradora pagará directamente al médico tratante por procedimientos.'
+  },
+  bx_suma_asegurada: {
+    title: 'Suma Asegurada BX+',
+    desc: 'Monto máximo que BX+ cubrirá por cada accidente o enfermedad del asegurado durante la vigencia de la póliza.'
+  },
+  bx_deducible: {
+    title: 'Deducible contratado BX+',
+    desc: 'Monto de participación a cargo del asegurado antes de que opere la aseguradora.'
+  },
+  bx_coaseguro: {
+    title: 'Coaseguro contratado BX+',
+    desc: 'Porcentaje de participación del asegurado en los gastos médicos una vez descontado el deducible (ej. 0%, 10%, 20%).'
+  },
+
+  // BNV Specific
+  bnv_zona: {
+    title: 'Zona Geográfica BNV',
+    desc: 'Distribución de tarifas para Bupa Nacional Vital. Zona 1 abarca CDMX, Área Metropolitana y Monterrey.'
+  },
+  bnv_tipo_cliente: {
+    title: 'Tipo de Cliente BNV',
+    desc: 'Te permite aplicar descuentos especiales basados en si es una póliza Individual, Familiar, Colectiva o con Convenios de Grupo.'
+  },
+  bnv_suma_asegurada: {
+    title: 'Suma Asegurada Vital',
+    desc: 'Suma acumulada anual máxima de Bupa Nacional Vital por asegurado. Disponible hasta $3M, $6M o $15M MXN.'
+  },
+  bnv_deducible: {
+    title: 'Deducible Vital',
+    desc: 'La participación inicial en gastos médicos. Al acumular este importe, Bupa cubre el remanente.'
+  },
+  bnv_coaseguro: {
+    title: 'Coaseguro Vital',
+    desc: 'Establece tu porcentaje de copago para eventos médicos. Disponible en opciones de 10% o 20%.'
+  },
+  bnv_tope_coaseguro: {
+    title: 'Tope de Coaseguro Vital',
+    desc: 'Te brinda certeza total al limitar la cantidad máxima que pagarás por concepto de coaseguro ante enfermedades graves.'
+  },
+  bnv_asistencia_extranjero: {
+    title: 'Asistencia en el Extranjero BNV',
+    desc: 'Cobertura de urgencias médicas inesperadas durante viajes internacionales temporales (de hasta 60 días).'
+  },
+
+  // BNP Specific
+  bnp_zona: {
+    title: 'Zona Geográfica BNP',
+    desc: 'Distribución de tarifas para Bupa Nacional Plus. Zona 1 proporciona cobertura completa en hospitales de alta gama nacional.'
+  },
+  bnp_tipo_cliente: {
+    title: 'Tipo de Cliente BNP',
+    desc: 'Ofrece descuentos de tasa según la contratación familiar, colectiva o corporativa.'
+  },
+  bnp_suma_asegurada: {
+    title: 'Suma Asegurada Plus',
+    desc: 'Límite máximo asegurado con Bupa Nacional Plus, disponible en opciones de hasta $50 millones de pesos anuales.'
+  },
+  bnp_deducible: {
+    title: 'Deducible Plus',
+    desc: 'Monto de deducible para Bupa Nacional Plus. Un deducible más alto reduce significativamente la prima anual.'
+  },
+  bnp_coaseguro: {
+    title: 'Coaseguro Plus',
+    desc: 'Porcentaje de participación de gastos en red hospitalaria de Bupa Nacional Plus (0%, 10% o 20%).'
+  },
+  bnp_cobertura_catastrofica_extranjero: {
+    title: 'Catastrófica Extranjero (CEE)',
+    desc: 'Extensión premium opcional que ampara la atención médica integral en hospitales altamente especializados del extranjero para padecimientos severos.'
+  },
+  bnp_asistencia_extranjero: {
+    title: 'Asistencia en el Extranjero Plus',
+    desc: 'Amparo frente a imprevistos y enfermedades agudas fuera de México con la robusta red de asistencia global de Bupa.'
+  }
+};
+
+function HelpTooltip({ text, title }: { text: string; title: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <span className="relative inline-flex items-center align-middle ml-1.5 select-none shrink-0 z-10">
+      <button
+        type="button"
+        onMouseEnter={() => setIsOpen(true)}
+        onMouseLeave={() => setIsOpen(false)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className="text-slate-400 hover:text-slate-600 transition-colors p-0.5 focus:outline-none rounded cursor-pointer"
+        aria-label={`Ayuda para ${title}`}
+      >
+        <HelpCircle className="w-3.5 h-3.5" />
+      </button>
+      {isOpen && (
+        <span className="absolute z-[999] bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-slate-900 border border-slate-800 text-white text-[11px] font-normal leading-relaxed rounded-xl shadow-2xl font-sans normal-case tracking-normal block text-center">
+          <span className="block font-bold text-teal-400 mb-1 border-b border-white/10 pb-1">{title}</span>
+          <span className="block text-slate-200">{text}</span>
+          <span className="absolute top-full left-1/2 transform -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45 border-r border-b border-slate-800"></span>
+        </span>
+      )}
+    </span>
+  );
+}
 
 export interface MulticotizadorGmmViewProps {
   people: QuotePerson[];
   setPeople: React.Dispatch<React.SetStateAction<QuotePerson[]>>;
   multicotiOptions: MultiGmmOptionConfig[];
   setMulticotiOptions: React.Dispatch<React.SetStateAction<MultiGmmOptionConfig[]>>;
-  multicotiResults: NormalizedResult[];
+  multicotiResultsByFreq: Record<string, Record<FormaPago, NormalizedResult>>;
   multicotiErrors: Record<string, string>;
   multicotiCalculating: boolean;
   savedMultiGmmQuotes: MultiGmmQuote[];
@@ -23,6 +140,8 @@ export interface MulticotizadorGmmViewProps {
   isSaving: boolean;
   activePackage: TariffPackage | null;
   activeBnpPackage: BnpTariffPackage | null;
+  selectedFormasPago: FormaPago[];
+  setSelectedFormasPago: React.Dispatch<React.SetStateAction<FormaPago[]>>;
 }
 
 export default function MulticotizadorGmmView({
@@ -30,7 +149,7 @@ export default function MulticotizadorGmmView({
   setPeople,
   multicotiOptions,
   setMulticotiOptions,
-  multicotiResults,
+  multicotiResultsByFreq,
   multicotiErrors,
   multicotiCalculating,
   savedMultiGmmQuotes,
@@ -39,7 +158,9 @@ export default function MulticotizadorGmmView({
   onDeleteSavedQuote,
   isSaving,
   activePackage,
-  activeBnpPackage
+  activeBnpPackage,
+  selectedFormasPago,
+  setSelectedFormasPago
 }: MulticotizadorGmmViewProps) {
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberRelation, setNewMemberRelation] = useState<RelationType>('Hij@');
@@ -58,12 +179,39 @@ export default function MulticotizadorGmmView({
     { key: 'Medicamentos fuera del hospital', name: 'Medicamentos fuera de Hospital', desc: 'Reembolso o pago directo de fármacos recetados para consumo ambulatorio.' },
     { key: 'Eliminación de deducible por accidente', name: 'Eliminación Deducible por Accidente', desc: 'No se paga deducible si el gasto médico deriva de un accidente fortuito.' },
     { key: 'Multirregión', name: 'Multirregión', desc: 'Permite programar cirugías en zonas más caras de la contratada.' },
-    { key: 'Beneficio hospitalario VIP', name: 'Beneficio Hospitalario VIP', desc: 'Comodidades ejecutivas o habitación premium durante reclusión.' }
+    { key: 'Beneficio hospitalario VIP', name: 'Beneficio Hospitalario VIP', desc: 'Comodidades ejecutivas o habitación premium durante reclusión.' },
+    // Plus de Bupa / Prevention rows
+    { key: 'Telemedicina Bupa 24/7', name: 'Telemedicina Bupa 24/7 (Bupa Plus)', desc: 'Consultas ilimitadas de medicina general, nutrición y psicología en la App de Bupa.' },
+    { key: 'Check-up Preventivo Anual', name: 'Check-up Preventivo Anual (Bupa Plus)', desc: 'Estudios de laboratorio básicos o integrales sin costo una vez al año.' },
+    { key: 'Monitoreo de Salud AI (Bupa Vital)', name: 'Monitoreo de Salud AI (Bupa Vital)', desc: 'Escaneo de signos vitales (presión, estrés, pulso) con la cámara de tu celular.' },
+    { key: 'Segunda Opinión Médica', name: 'Segunda Opinión Médica (Bupa Plus)', desc: 'Acceso a interconsulta con médicos especialistas líderes para padecimientos cubiertos.' }
   ];
 
   // Helper inside matrix to determine icon & class
   const getMatrixStatus = (opt: MultiGmmOptionConfig, result: NormalizedResult | null, key: string) => {
     if (!result) return { icon: '—', text: 'No calculado', color: 'text-slate-400' };
+
+    // Common Bupa Plus rows
+    if (key === 'Check-up Preventivo Anual') {
+      if (result.product_id === 'BXPLUS') return { icon: '⚠️', text: 'No incluido', color: 'text-slate-400' };
+      if (result.product_id === 'BNV') return { icon: '✨', text: 'Incluido (Básico)', color: 'text-emerald-600 font-bold' };
+      if (result.product_id === 'BNP') return { icon: '✨', text: 'Incluido (Integral Plus)', color: 'text-indigo-600 font-bold' };
+    }
+    if (key === 'Telemedicina Bupa 24/7') {
+      if (result.product_id === 'BXPLUS') return { icon: '📞', text: 'Orientación telefónica', color: 'text-slate-500 font-medium' };
+      if (result.product_id === 'BNV') return { icon: '✨', text: 'Incluido (App Bupa)', color: 'text-emerald-600 font-bold' };
+      if (result.product_id === 'BNP') return { icon: '✨', text: 'Incluido (App Bupa Plus)', color: 'text-indigo-600 font-bold' };
+    }
+    if (key === 'Monitoreo de Salud AI (Bupa Vital)') {
+      if (result.product_id === 'BXPLUS') return { icon: '❌', text: 'No incluido', color: 'text-rose-500' };
+      if (result.product_id === 'BNV') return { icon: '✨', text: 'Incluido (Bupa Vital)', color: 'text-emerald-600 font-bold' };
+      if (result.product_id === 'BNP') return { icon: '✨', text: 'Incluido (Bupa Vital)', color: 'text-indigo-600 font-bold' };
+    }
+    if (key === 'Segunda Opinión Médica') {
+      if (result.product_id === 'BXPLUS') return { icon: '✅', text: 'Nacional preautorizado', color: 'text-slate-500 font-medium' };
+      if (result.product_id === 'BNV') return { icon: '✨', text: 'Incluido Nacional/Inter.', color: 'text-emerald-600 font-bold' };
+      if (result.product_id === 'BNP') return { icon: '✨', text: 'Incluido Inter. Premium', color: 'text-indigo-600 font-bold' };
+    }
 
     if (result.product_id === 'BXPLUS') {
       if (key === 'Gastos de Hospitalización' || key === 'Honorarios Médicos / Quirúrgicos') {
@@ -481,6 +629,78 @@ export default function MulticotizadorGmmView({
             )}
           </div>
         </div>
+
+        {/* Formas de Pago Comparativas (User Goal #5) */}
+        <div className="border-t border-slate-150 pt-5 mt-5">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest font-mono mb-2 flex items-center gap-1.5">
+            <CheckSquare className="w-4 h-4 text-emerald-600" />
+            Formas de Pago Comparativas
+          </h3>
+          <p className="text-xs text-slate-450 mb-3.5">
+            Selecciona una o más formas de pago para el comparativo. En el paso 3 se desglosará el costo detallado para cada una de las opciones elegidas.
+          </p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {(['Anual', 'Semestral', 'Trimestral', 'Mensual'] as FormaPago[]).map((forma) => {
+              const checked = selectedFormasPago.includes(forma);
+              return (
+                <label
+                  key={forma}
+                  className={`flex flex-col p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
+                    checked
+                      ? 'bg-emerald-50/40 border-emerald-500 text-slate-900 shadow-sm'
+                      : 'bg-white border-slate-205 hover:bg-slate-50 text-slate-600 hover:border-slate-350'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold">{forma}</span>
+                    <input
+                      type="checkbox"
+                      className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-555 h-3.5 w-3.5 accent-emerald-600 cursor-pointer"
+                      checked={checked}
+                      onChange={() => {
+                        if (checked) {
+                          if (selectedFormasPago.length > 1) {
+                            setSelectedFormasPago(selectedFormasPago.filter(f => f !== forma));
+                          }
+                        } else {
+                          setSelectedFormasPago([...selectedFormasPago, forma]);
+                        }
+                      }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-450 mt-1 leading-snug">
+                    {forma === 'Anual' && '1 pago único, sin recargo'}
+                    {forma === 'Semestral' && '2 pagos, con cargo'}
+                    {forma === 'Trimestral' && '4 pagos, con cargo'}
+                    {forma === 'Mensual' && '12 pagos, con recargo'}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Help & Benefits Highlight Banner */}
+      <div className="bg-gradient-to-r from-teal-50 to-indigo-50/70 border border-teal-100 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-white rounded-xl text-teal-600 shadow-sm shrink-0">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-800 font-sans flex items-center gap-1.5 leading-snug">
+              Información de Coberturas & Beneficios Plus de Bupa
+            </h4>
+            <p className="text-[11px] text-slate-550 mt-1 leading-relaxed max-w-3xl">
+              Hemos integrado selectores inteligentes con <strong>ayuda flotante ⓘ</strong> al lado de cada parámetro para explicar detalladamente coberturas, deducibles, coaseguros y beneficios adicionales en Bupa y BX+. Además, tu cotización incluye de forma automática los <strong>Plus de Bupa</strong> (Telemedicina 24/7 de medicina general, nutrición y psicología, Check-Up preventivo sin costo y Monitoreo de salud AI).
+            </p>
+          </div>
+        </div>
+        <div className="bg-white border border-slate-205 text-slate-700 text-[10px] px-3 py-1.5 rounded-lg shrink-0 font-medium shadow-sm flex items-center gap-1">
+          <Info className="w-3.5 h-3.5 text-teal-600" />
+          <span>Soporte de Ayuda Activo</span>
+        </div>
       </div>
 
       {/* STEP 2: Comparative Quote Options Deck */}
@@ -508,7 +728,8 @@ export default function MulticotizadorGmmView({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {multicotiOptions.map((opt, optIndex) => {
             const hasError = !!multicotiErrors[opt.id];
-            const resultData = multicotiResults[optIndex] || null;
+            const freqResults = multicotiResultsByFreq[opt.id] || {};
+            const resultData = Object.values(freqResults)[0] || null;
             const carrierTheme = opt.product_id === 'BXPLUS' 
               ? { bg: 'bg-emerald-500', text: 'text-emerald-700', label: 'BX+ Únikuz', border: 'border-emerald-200', tag: 'bg-emerald-100', textTag: 'text-emerald-800' }
               : opt.product_id === 'BNV'
@@ -567,7 +788,10 @@ export default function MulticotizadorGmmView({
                     <div className="space-y-3.5">
                       {/* Zona */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider">Zona Geográfica</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider flex items-center">
+                          Zona Geográfica
+                          <HelpTooltip text={HELP_TEXTS.bx_zona.desc} title={HELP_TEXTS.bx_zona.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none"
@@ -584,7 +808,10 @@ export default function MulticotizadorGmmView({
 
                       {/* Nivel Red Hospitalaria */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-sans">Nivel Hospitalario</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider flex items-center">
+                          Nivel Hospitalario
+                          <HelpTooltip text={HELP_TEXTS.bx_nivel_hospitalario.desc} title={HELP_TEXTS.bx_nivel_hospitalario.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none"
@@ -602,7 +829,10 @@ export default function MulticotizadorGmmView({
 
                       {/* Tabulador o Honorarios */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider">Tabulador Médico</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider flex items-center">
+                          Tabulador Médico
+                          <HelpTooltip text={HELP_TEXTS.bx_tabulador.desc} title={HELP_TEXTS.bx_tabulador.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none"
@@ -620,7 +850,10 @@ export default function MulticotizadorGmmView({
 
                       {/* Suma Asegurada */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono">Suma Asegurada GMM</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono flex items-center">
+                          Suma Asegurada GMM
+                          <HelpTooltip text={HELP_TEXTS.bx_suma_asegurada.desc} title={HELP_TEXTS.bx_suma_asegurada.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none font-mono"
@@ -638,7 +871,10 @@ export default function MulticotizadorGmmView({
 
                       {/* Deducible */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono">Deducible Contratado</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono flex items-center">
+                          Deducible Contratado
+                          <HelpTooltip text={HELP_TEXTS.bx_deducible.desc} title={HELP_TEXTS.bx_deducible.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none font-mono"
@@ -654,10 +890,13 @@ export default function MulticotizadorGmmView({
                         </div>
                       </div>
 
-                      {/* Coaseguro & Forma Pago */}
-                      <div className="grid grid-cols-2 gap-3 pb-1">
+                      {/* Coaseguro */}
+                      <div className="pb-1">
                         <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider">Coaseguro</label>
+                          <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider flex items-center">
+                            Coaseguro
+                            <HelpTooltip text={HELP_TEXTS.bx_coaseguro.desc} title={HELP_TEXTS.bx_coaseguro.title} />
+                          </label>
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-lg py-1 px-1.5"
                             value={opt.bx_coaseguro}
@@ -666,20 +905,6 @@ export default function MulticotizadorGmmView({
                             <option value={0}>0%</option>
                             <option value={10}>10%</option>
                             <option value={20}>20%</option>
-                          </select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider">Pago</label>
-                          <select
-                            className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-lg py-1 px-1.5"
-                            value={opt.bx_forma_pago}
-                            onChange={(e) => handleUpdateOptionField(optIndex, 'bx_forma_pago', e.target.value)}
-                          >
-                            <option value="Anual">Anual</option>
-                            <option value="Semestral">Semestral</option>
-                            <option value="Trimestral">Trimestral</option>
-                            <option value="Mensual">Mensual</option>
                           </select>
                         </div>
                       </div>
@@ -691,16 +916,22 @@ export default function MulticotizadorGmmView({
                           {Object.keys(BXPLUS_COVERAGES_INFO).map((covName) => {
                             const isChecked = opt.bx_coberturas_opcionales?.includes(covName) ?? false;
                             return (
-                              <label key={covName} className="flex items-start gap-1.5 cursor-pointer hover:text-slate-900 select-none">
-                                <input
-                                  type="checkbox"
-                                  className="mt-0.5 w-3.5 h-3.5 accent-slate-950 shrink-0"
-                                  checked={isChecked}
-                                  onChange={() => handleToggleBxCoverage(optIndex, covName)}
+                              <label key={covName} className="flex items-center justify-between gap-1.5 cursor-pointer hover:bg-slate-100 p-1 rounded transition-colors select-none w-full">
+                                <div className="flex items-start gap-1.5 min-w-0 flex-1">
+                                  <input
+                                    type="checkbox"
+                                    className="mt-0.5 w-3.5 h-3.5 accent-slate-950 shrink-0"
+                                    checked={isChecked}
+                                    onChange={() => handleToggleBxCoverage(optIndex, covName)}
+                                  />
+                                  <span className={`text-[10px] ${isChecked ? 'font-semibold text-slate-850 font-medium' : 'text-slate-550'}`}>
+                                    {covName}
+                                  </span>
+                                </div>
+                                <HelpTooltip 
+                                  title={covName} 
+                                  text={BXPLUS_COVERAGES_INFO[covName as keyof typeof BXPLUS_COVERAGES_INFO] || ""} 
                                 />
-                                <span className={isChecked ? 'font-semibold text-slate-850' : 'text-slate-550'}>
-                                  {covName}
-                                </span>
                               </label>
                             );
                           })}
@@ -714,7 +945,10 @@ export default function MulticotizadorGmmView({
                     <div className="space-y-3.5">
                       {/* Zona */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider">Zona Geográfica</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider flex items-center">
+                          Zona Geográfica
+                          <HelpTooltip text={HELP_TEXTS.bnv_zona.desc} title={HELP_TEXTS.bnv_zona.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none"
@@ -730,7 +964,10 @@ export default function MulticotizadorGmmView({
 
                       {/* Tipo Cliente */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider">Tipo de Cliente</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider flex items-center">
+                          Tipo de Cliente
+                          <HelpTooltip text={HELP_TEXTS.bnv_tipo_cliente.desc} title={HELP_TEXTS.bnv_tipo_cliente.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none"
@@ -752,7 +989,10 @@ export default function MulticotizadorGmmView({
 
                       {/* Suma Asegurada */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono">Suma Asegurada BNV</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono flex items-center">
+                          Suma Asegurada BNV
+                          <HelpTooltip text={HELP_TEXTS.bnv_suma_asegurada.desc} title={HELP_TEXTS.bnv_suma_asegurada.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none font-mono"
@@ -771,7 +1011,10 @@ export default function MulticotizadorGmmView({
 
                       {/* Deducible */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono">Deducible Contratado BNV</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono flex items-center">
+                          Deducible Contratado BNV
+                          <HelpTooltip text={HELP_TEXTS.bnv_deducible.desc} title={HELP_TEXTS.bnv_deducible.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none font-mono"
@@ -790,7 +1033,10 @@ export default function MulticotizadorGmmView({
 
                       {/* Coaseguro */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono">Coaseguro Contratado</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono flex items-center">
+                          Coaseguro Contratado
+                          <HelpTooltip text={HELP_TEXTS.bnv_coaseguro.desc} title={HELP_TEXTS.bnv_coaseguro.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none font-mono"
@@ -809,7 +1055,10 @@ export default function MulticotizadorGmmView({
 
                       {/* Tope Coaseguro */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider">Tope de Coaseguro</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider flex items-center">
+                          Tope de Coaseguro
+                          <HelpTooltip text={HELP_TEXTS.bnv_tope_coaseguro.desc} title={HELP_TEXTS.bnv_tope_coaseguro.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none"
@@ -827,9 +1076,12 @@ export default function MulticotizadorGmmView({
                       </div>
 
                       {/* Adicionales BNV toggles */}
-                      <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-100">
+                      <div className="pt-2 border-t border-slate-100">
                         <div>
-                          <label className="block text-[8.5px] font-bold text-slate-400 uppercase tracking-widest mb-1">Asist. Extr.</label>
+                          <label className="block text-[8.5px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center">
+                            Asistencia Extranjero
+                            <HelpTooltip text={HELP_TEXTS.bnv_asistencia_extranjero.desc} title={HELP_TEXTS.bnv_asistencia_extranjero.title} />
+                          </label>
                           <select
                             className="w-full bg-slate-50 border border-slate-200 text-[10.5px] rounded-lg p-1 font-semibold"
                             value={opt.bnv_asistencia_extranjero}
@@ -837,19 +1089,6 @@ export default function MulticotizadorGmmView({
                           >
                             <option value="Si">Si</option>
                             <option value="No">No</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[8.5px] font-bold text-slate-400 uppercase tracking-widest mb-1">Forma Pago</label>
-                          <select
-                            className="w-full bg-slate-50 border border-slate-200 text-[10.5px] rounded-lg p-1 font-semibold"
-                            value={opt.bnv_forma_pago}
-                            onChange={(e) => handleUpdateOptionField(optIndex, 'bnv_forma_pago', e.target.value)}
-                          >
-                            <option value="Anual">Anual</option>
-                            <option value="Semestral">Semestral</option>
-                            <option value="Trimestral">Trimestral</option>
-                            <option value="Mensual">Mensual</option>
                           </select>
                         </div>
                       </div>
@@ -861,7 +1100,10 @@ export default function MulticotizadorGmmView({
                     <div className="space-y-3.5">
                       {/* Zona */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider">Zona Geográfica</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider flex items-center">
+                          Zona Geográfica
+                          <HelpTooltip text={HELP_TEXTS.bnp_zona.desc} title={HELP_TEXTS.bnp_zona.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none"
@@ -877,7 +1119,10 @@ export default function MulticotizadorGmmView({
 
                       {/* Tipo Cliente */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider">Tipo de Cliente (Descuento)</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider flex items-center">
+                          Tipo de Cliente (Descuento)
+                          <HelpTooltip text={HELP_TEXTS.bnp_tipo_cliente.desc} title={HELP_TEXTS.bnp_tipo_cliente.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none"
@@ -899,7 +1144,10 @@ export default function MulticotizadorGmmView({
 
                       {/* Suma Asegurada */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono">Suma Asegurada BNP</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono flex items-center">
+                          Suma Asegurada BNP
+                          <HelpTooltip text={HELP_TEXTS.bnp_suma_asegurada.desc} title={HELP_TEXTS.bnp_suma_asegurada.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none font-mono"
@@ -918,7 +1166,10 @@ export default function MulticotizadorGmmView({
 
                       {/* Deducible */}
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono">Deducible Contratado BNP</label>
+                        <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider font-mono flex items-center">
+                          Deducible Contratado BNP
+                          <HelpTooltip text={HELP_TEXTS.bnp_deducible.desc} title={HELP_TEXTS.bnp_deducible.title} />
+                        </label>
                         <div className="relative">
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-700 text-xs rounded-xl py-1.5 px-2 appearance-none font-mono"
@@ -938,7 +1189,10 @@ export default function MulticotizadorGmmView({
                       {/* Coaseguro y Catastrofico togglers */}
                       <div className="grid grid-cols-2 gap-3 pt-1">
                         <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider">Coaseguro</label>
+                          <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider flex items-center">
+                            Coaseguro
+                            <HelpTooltip text={HELP_TEXTS.bnp_coaseguro.desc} title={HELP_TEXTS.bnp_coaseguro.title} />
+                          </label>
                           <select
                             className="w-full bg-white border border-slate-200 text-slate-750 text-xs rounded-lg p-1.5 font-sans"
                             value={opt.bnp_coaseguro}
@@ -951,9 +1205,12 @@ export default function MulticotizadorGmmView({
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider">CEE Extr.</label>
+                          <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider flex items-center">
+                            CEE Extr.
+                            <HelpTooltip text={HELP_TEXTS.bnp_cobertura_catastrofica_extranjero.desc} title={HELP_TEXTS.bnp_cobertura_catastrofica_extranjero.title} />
+                          </label>
                           <select
-                            className="w-full bg-white border border-slate-200 text-slate-750 text-xs rounded-lg p-1.5 font-sans"
+                            className="w-full bg-white border border-slate-200 text-slate-755 text-xs rounded-lg p-1.5 font-sans"
                             value={opt.bnp_cobertura_catastrofica_extranjero}
                             onChange={(e) => handleUpdateOptionField(optIndex, 'bnp_cobertura_catastrofica_extranjero', e.target.value)}
                           >
@@ -963,10 +1220,13 @@ export default function MulticotizadorGmmView({
                         </div>
                       </div>
 
-                      {/* Forma de pago */}
-                      <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-100">
+                      {/* Asistencia Extranjero */}
+                      <div className="pt-2 border-t border-slate-100">
                         <div>
-                          <label className="block text-[8.5px] font-bold text-slate-400 uppercase tracking-widest mb-1 font-mono">Asist. Extr.</label>
+                          <label className="block text-[8.5px] font-bold text-slate-450 uppercase tracking-widest mb-1 font-mono flex items-center">
+                            Asistencia en el Extranjero
+                            <HelpTooltip text={HELP_TEXTS.bnp_asistencia_extranjero.desc} title={HELP_TEXTS.bnp_asistencia_extranjero.title} />
+                          </label>
                           <select
                             className="w-full bg-slate-50 border border-slate-200 text-[10.5px] rounded-lg p-1 font-semibold"
                             value={opt.bnp_asistencia_extranjero}
@@ -976,56 +1236,82 @@ export default function MulticotizadorGmmView({
                             <option value="No">No</option>
                           </select>
                         </div>
-                        <div>
-                          <label className="block text-[8.5px] font-bold text-slate-400 uppercase tracking-widest mb-1 font-sans">Forma Pago</label>
-                          <select
-                            className="w-full bg-slate-50 border border-slate-200 text-[10.5px] rounded-lg p-1 font-semibold"
-                            value={opt.bnp_forma_pago}
-                            onChange={(e) => handleUpdateOptionField(optIndex, 'bnp_forma_pago', e.target.value)}
-                          >
-                            <option value="Anual">Anual</option>
-                            <option value="Semestral">Semestral</option>
-                            <option value="Trimestral">Trimestral</option>
-                            <option value="Mensual">Mensual</option>
-                          </select>
-                        </div>
                       </div>
                     </div>
                   )}
 
                 </div>
 
+                {/* Bupa Plus / Prevention Benefits Panel */}
+                {(opt.product_id === 'BNV' || opt.product_id === 'BNP') && (
+                  <div className="mx-5 mb-4 p-3.5 bg-gradient-to-br from-emerald-50 to-teal-50/50 border border-emerald-100 rounded-2xl space-y-2 text-left">
+                    <div className="flex items-center gap-1.5 text-emerald-800 font-bold text-[10.5px]">
+                      <Gift className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Beneficios Plus de Bupa Incluidos</span>
+                    </div>
+                    <p className="text-[10px] text-slate-550 leading-relaxed">
+                      Tu cotización de {opt.product_id === 'BNV' ? 'Bupa Nacional Vital' : 'Bupa Nacional Plus'} incluye de forma automática:
+                    </p>
+                    <ul className="text-[9.5px] space-y-1.5 text-slate-700">
+                      <li className="flex items-start gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                        <span><strong>Telemedicina 24/7 sin costo:</strong> Consultas ilimitadas de medicina general, nutrición y psicología mediante la App de Bupa.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                        <span><strong>Check-up Médico Anual:</strong> {opt.product_id === 'BNV' ? 'Análisis clínicos básicos' : 'Análisis clínicos integrales'} sin costo en laboratorios de red autorizados.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                        <span><strong>Monitoreo Vital AI:</strong> Mide tus signos vitales en 60 segundos usando la cámara de tu celular con Bupa Vital.</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                        <span><strong>Segunda Opinión Internacional:</strong> Acceso a interconsulta médica de súper especialidad con líderes globales.</span>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+
                 {/* Pricing / Loading Feedback footer */}
-                <div className="border-t border-slate-150 p-4 bg-slate-50">
+                <div className="border-t border-slate-150 p-4 bg-slate-50 space-y-3">
                   {hasError ? (
                     <div className="bg-rose-50 border border-rose-150 rounded-xl p-3 text-rose-800 text-[11px] flex gap-1.5">
                       <ShieldAlert className="w-4 h-4 shrink-0" />
                       <span>{multicotiErrors[opt.id]}</span>
                     </div>
-                  ) : resultData ? (
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-baseline">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase leading-none">Costo Total Anualizado</span>
-                        <span className="text-lg font-bold font-mono text-emerald-600">
-                          ${resultData.totals.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                      
-                      <div className="flex justify-between items-baseline text-xs border-t border-slate-200 pt-2 font-mono">
-                        <span className="text-slate-500 font-sans text-[10.5px]">Primer recibo:</span>
-                        <span className="font-semibold text-slate-800">
-                          ${resultData.totals.primer_pago.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
+                  ) : Object.keys(freqResults).length > 0 ? (
+                    <div className="space-y-3 last:space-y-0 text-left">
+                      {selectedFormasPago.map((forma) => {
+                        const result = freqResults[forma];
+                        if (!result) return null;
+                        return (
+                          <div key={forma} className="border-b border-slate-205 last:border-none pb-2.5 last:pb-0 space-y-1">
+                            <div className="flex justify-between items-baseline">
+                              <span className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider">{forma} - Costo Total</span>
+                              <span className="text-sm font-bold font-mono text-emerald-600">
+                                ${result.totals.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                            
+                            <div className="flex justify-between items-baseline text-[10px] font-mono text-slate-450">
+                              <span className="font-sans">Primer recibo (Inicial):</span>
+                              <span className="font-semibold text-slate-800">
+                                ${result.totals.primer_pago.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
 
-                      {resultData.totals.pagos_subsecuentes > 0 && (
-                        <div className="flex justify-between items-baseline text-xs font-mono">
-                          <span className="text-slate-455 font-sans text-[10.5px]">Pagos subsecuentes ({resultData.totals.numero_recibos - 1}x):</span>
-                          <span className="font-semibold text-slate-800">
-                            ${resultData.totals.pagos_subsecuentes.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                      )}
+                            {result.totals.pagos_subsecuentes > 0 && (
+                              <div className="flex justify-between items-baseline text-[10px] font-mono text-slate-450">
+                                <span className="font-sans">Subsecuentes ({result.totals.numero_recibos - 1}x):</span>
+                                <span className="font-semibold text-slate-800">
+                                  ${result.totals.pagos_subsecuentes.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-4 text-xs font-mono text-slate-400">
@@ -1084,7 +1370,7 @@ export default function MulticotizadorGmmView({
                 <tr>
                   <td className="p-4 font-medium text-slate-450 uppercase font-mono text-[9px] bg-slate-50/40">Geografía / Red de Atención</td>
                   {multicotiOptions.map((opt, oIdx) => {
-                    const result = multicotiResults[oIdx];
+                    const result = multicotiResultsByFreq[opt.id]?.[selectedFormasPago[0]];
                     return (
                       <td key={opt.id} className="p-4 font-semibold text-slate-800 border-l border-slate-150 bg-slate-50/10">
                         {result?.plan_summary ? `${result.plan_summary.zona}` : 'No calculado'}
@@ -1097,7 +1383,7 @@ export default function MulticotizadorGmmView({
                 <tr>
                   <td className="p-4 font-medium text-slate-450 uppercase font-mono text-[9px] bg-slate-50/40">Suma Asegurada Limit (MXN)</td>
                   {multicotiOptions.map((opt, oIdx) => {
-                    const result = multicotiResults[oIdx];
+                    const result = multicotiResultsByFreq[opt.id]?.[selectedFormasPago[0]];
                     return (
                       <td key={opt.id} className="p-4 font-bold text-slate-800 border-l border-slate-150 bg-slate-50/10 font-mono">
                         {result?.plan_summary ? `$${(result.plan_summary.suma_asegurada).toLocaleString()} MXN` : 'No calculado'}
@@ -1110,7 +1396,7 @@ export default function MulticotizadorGmmView({
                 <tr>
                   <td className="p-4 font-medium text-slate-450 uppercase font-mono text-[9px] bg-slate-50/40">Deducible Contratado</td>
                   {multicotiOptions.map((opt, oIdx) => {
-                    const result = multicotiResults[oIdx];
+                    const result = multicotiResultsByFreq[opt.id]?.[selectedFormasPago[0]];
                     return (
                       <td key={opt.id} className="p-4 font-bold text-slate-800 border-l border-slate-150 bg-slate-50/10 font-mono">
                         {result?.plan_summary ? `$${result.plan_summary.deducible.toLocaleString()} MXN` : 'No calculado'}
@@ -1123,7 +1409,7 @@ export default function MulticotizadorGmmView({
                 <tr>
                   <td className="p-4 font-medium text-slate-450 uppercase font-mono text-[9px] bg-slate-50/40">Coaseguro Contratado (%)</td>
                   {multicotiOptions.map((opt, oIdx) => {
-                    const result = multicotiResults[oIdx];
+                    const result = multicotiResultsByFreq[opt.id]?.[selectedFormasPago[0]];
                     return (
                       <td key={opt.id} className="p-4 font-semibold text-slate-800 border-l border-slate-150 bg-slate-50/10 font-mono">
                         {result?.plan_summary ? `${result.plan_summary.coaseguro}%` : 'No calculado'}
@@ -1136,7 +1422,7 @@ export default function MulticotizadorGmmView({
                 <tr>
                   <td className="p-4 font-medium text-slate-450 uppercase font-mono text-[9px] bg-slate-50/40">Tope de Coaseguro</td>
                   {multicotiOptions.map((opt, oIdx) => {
-                    const result = multicotiResults[oIdx];
+                    const result = multicotiResultsByFreq[opt.id]?.[selectedFormasPago[0]];
                     if (!result?.plan_summary) return <td key={opt.id} className="p-4 text-slate-400 border-l border-slate-150 bg-slate-50/10">—</td>;
                     return (
                       <td key={opt.id} className="p-4 font-semibold text-slate-800 border-l border-slate-150 bg-slate-50/10 font-mono">
@@ -1150,12 +1436,11 @@ export default function MulticotizadorGmmView({
 
                 {/* 6. Formas de Pago */}
                 <tr>
-                  <td className="p-4 font-medium text-slate-450 uppercase font-mono text-[9px] bg-slate-50/40">Frecuencia de Pago</td>
+                  <td className="p-4 font-medium text-slate-450 uppercase font-mono text-[9px] bg-slate-50/40">Frecuencias Cotizadas</td>
                   {multicotiOptions.map((opt, oIdx) => {
-                    const result = multicotiResults[oIdx];
                     return (
-                      <td key={opt.id} className="p-4 font-bold text-slate-805 border-l border-slate-150 bg-slate-50/10">
-                        {result?.plan_summary ? `${result.plan_summary.forma_pago}` : 'No calculado'}
+                      <td key={opt.id} className="p-4 font-bold text-slate-808 border-l border-slate-150 bg-slate-50/10">
+                        {selectedFormasPago.join(', ')}
                       </td>
                     );
                   })}
@@ -1163,105 +1448,121 @@ export default function MulticotizadorGmmView({
 
                 {/* Breakdowns section header */}
                 <tr className="bg-slate-100/50">
-                  <td colSpan={multicotiOptions.length + 1} className="p-3 font-bold text-slate-700 text-[10px] uppercase font-sans tracking-wide">
-                    Desglose Financiero de Cotizaciones (MXN)
+                  <td colSpan={multicotiOptions.length + 1} className="p-3 font-bold text-slate-700 text-[10.5px] uppercase font-sans tracking-wide">
+                    Desglose Financiero por Frecuencia de Pago (MXN)
                   </td>
                 </tr>
 
-                {/* Prima Neta */}
-                <tr>
-                  <td className="p-4 text-slate-500 pl-4">Prima Neta del Grupo:</td>
-                  {multicotiOptions.map((opt, oIdx) => {
-                    const result = multicotiResults[oIdx];
-                    return (
-                      <td key={opt.id} className="p-4 font-mono text-slate-800 border-l border-slate-150">
-                        {result ? `$${result.totals.prima_neta.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '—'}
-                      </td>
-                    );
-                  })}
-                </tr>
+                {/* Loop over each selected payment frequency (User Goal #5) */}
+                {selectedFormasPago.map((forma) => {
+                  return (
+                    <React.Fragment key={forma}>
+                      {/* Sub-header for the current frequency */}
+                      <tr className="bg-slate-50 border-t border-b border-slate-150">
+                        <td colSpan={multicotiOptions.length + 1} className="p-3 font-bold text-slate-700 text-[9.5px] uppercase font-mono tracking-wider">
+                          Frecuencia: <span className="text-emerald-700 font-bold text-xs">{forma}</span>
+                        </td>
+                      </tr>
 
-                {/* Cargo Financiero */}
-                <tr>
-                  <td className="p-4 text-slate-500 pl-4">Recargo por Pago Fraccionado:</td>
-                  {multicotiOptions.map((opt, oIdx) => {
-                    const result = multicotiResults[oIdx];
-                    return (
-                      <td key={opt.id} className="p-4 font-mono text-slate-800 border-l border-slate-150">
-                        {result && result.totals.recargo_pago > 0 
-                          ? `+$${result.totals.recargo_pago.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` 
-                          : '$0.00'}
-                      </td>
-                    );
-                  })}
-                </tr>
+                      {/* Costo Total */}
+                      <tr className="bg-emerald-50/30">
+                        <td className="p-3.5 text-slate-800 font-bold pl-5">Costo Total del Recibo ({forma}):</td>
+                        {multicotiOptions.map((opt, oIdx) => {
+                          const result = multicotiResultsByFreq[opt.id]?.[forma];
+                          return (
+                            <td key={opt.id} className="p-3.5 font-bold border-l border-slate-150 text-emerald-700 font-mono text-xs bg-emerald-50/5">
+                              {result ? `$${result.totals.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '—'}
+                            </td>
+                          );
+                        })}
+                      </tr>
 
-                {/* Derechos de Poliza */}
-                <tr>
-                  <td className="p-4 text-slate-500 pl-4">Derecho de Póliza (Gasto administrativo):</td>
-                  {multicotiOptions.map((opt, oIdx) => {
-                    const result = multicotiResults[oIdx];
-                    return (
-                      <td key={opt.id} className="p-4 font-mono text-slate-800 border-l border-slate-150">
-                        {result ? `+$${result.totals.derecho_poliza.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '—'}
-                      </td>
-                    );
-                  })}
-                </tr>
+                      {/* Primer Pago */}
+                      <tr>
+                        <td className="p-3.5 text-slate-500 font-semibold pl-6">Primer Pago (Inicial):</td>
+                        {multicotiOptions.map((opt, oIdx) => {
+                          const result = multicotiResultsByFreq[opt.id]?.[forma];
+                          return (
+                            <td key={opt.id} className="p-3.5 font-bold text-slate-800 border-l border-slate-150 font-mono">
+                              {result ? `$${result.totals.primer_pago.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '—'}
+                            </td>
+                          );
+                        })}
+                      </tr>
 
-                {/* Impuesto IVA */}
-                <tr>
-                  <td className="p-4 text-slate-500 pl-4">Impuesto IVA (16%):</td>
-                  {multicotiOptions.map((opt, oIdx) => {
-                    const result = multicotiResults[oIdx];
-                    return (
-                      <td key={opt.id} className="p-4 font-mono text-slate-800 border-l border-slate-150">
-                        {result ? `+$${result.totals.iva.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '—'}
-                      </td>
-                    );
-                  })}
-                </tr>
+                      {/* Subsecuentes */}
+                      <tr>
+                        <td className="p-3.5 text-slate-500 pl-6">Subsecuentes:</td>
+                        {multicotiOptions.map((opt, oIdx) => {
+                          const result = multicotiResultsByFreq[opt.id]?.[forma];
+                          if (!result) return <td key={opt.id} className="p-3.5 text-slate-400 border-l border-slate-150 font-mono">—</td>;
+                          const hasSubsecuentes = result.totals.pagos_subsecuentes > 0;
+                          return (
+                            <td key={opt.id} className="p-3.5 font-mono text-slate-800 border-l border-slate-150">
+                              {hasSubsecuentes 
+                                ? `${result.totals.numero_recibos - 1} pagos de $${result.totals.pagos_subsecuentes.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+                                : 'No aplica (Pago Único)'}
+                            </td>
+                          );
+                        })}
+                      </tr>
 
-                {/* COSTO TOTAL FINAL MATRIZ ROW */}
-                <tr className="bg-emerald-50/40">
-                  <td className="p-4 font-bold text-slate-800 uppercase text-[9.5px]">Costo Total del Recibo</td>
-                  {multicotiOptions.map((opt, oIdx) => {
-                    const result = multicotiResults[oIdx];
-                    return (
-                      <td key={opt.id} className="p-4 font-bold border-l border-slate-150 text-emerald-700 font-mono text-sm shadow-sm bg-emerald-50/10">
-                        {result ? `$${result.totals.total.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '—'}
-                      </td>
-                    );
-                  })}
-                </tr>
+                      {/* Prima Neta */}
+                      <tr className="opacity-70 text-[11px]">
+                        <td className="p-3 text-slate-450 pl-6">Prima Neta del Grupo:</td>
+                        {multicotiOptions.map((opt, oIdx) => {
+                          const result = multicotiResultsByFreq[opt.id]?.[forma];
+                          return (
+                            <td key={opt.id} className="p-3 font-mono text-slate-500 border-l border-slate-150">
+                              {result ? `$${result.totals.prima_neta.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '—'}
+                            </td>
+                          );
+                        })}
+                      </tr>
 
-                {/* Primer pago portions */}
-                <tr>
-                  <td className="p-4 text-slate-500 font-bold pl-4">Primer Recibo (Inicial):</td>
-                  {multicotiOptions.map((opt, oIdx) => {
-                    const result = multicotiResults[oIdx];
-                    return (
-                      <td key={opt.id} className="p-4 font-bold text-slate-850 border-l border-slate-150 font-mono">
-                        {result ? `$${result.totals.primer_pago.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '—'}
-                      </td>
-                    );
-                  })}
-                </tr>
+                      {/* Cargo Financiero */}
+                      <tr className="opacity-70 text-[11px]">
+                        <td className="p-3 text-slate-450 pl-6">Cargo Financiero:</td>
+                        {multicotiOptions.map((opt, oIdx) => {
+                          const result = multicotiResultsByFreq[opt.id]?.[forma];
+                          return (
+                            <td key={opt.id} className="p-3 font-mono text-slate-500 border-l border-slate-150">
+                              {result && result.totals.recargo_pago > 0 
+                                ? `+$${result.totals.recargo_pago.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` 
+                                : '$0.00'}
+                            </td>
+                          );
+                        })}
+                      </tr>
 
-                {/* Pagos subsecuentes */}
-                <tr>
-                  <td className="p-4 text-slate-500 pl-4">Subsecuentes (Subtotales):</td>
-                  {multicotiOptions.map((opt, oIdx) => {
-                    const result = multicotiResults[oIdx];
-                    return (
-                      <td key={opt.id} className="p-4 font-mono text-slate-800 border-l border-slate-150 text-[11px]">
-                        {result && result.totals.pagos_subsecuentes > 0 
-                          ? `$${result.totals.pagos_subsecuentes.toLocaleString('es-MX', { minimumFractionDigits: 2 })} / recibo` 
-                          : 'No aplica (Pago Único)'}
-                      </td>
-                    );
-                  })}
-                </tr>
+                      {/* Derechos de Poliza */}
+                      <tr className="opacity-70 text-[11px]">
+                        <td className="p-3 text-slate-450 pl-6">Derechos de Póliza:</td>
+                        {multicotiOptions.map((opt, oIdx) => {
+                          const result = multicotiResultsByFreq[opt.id]?.[forma];
+                          return (
+                            <td key={opt.id} className="p-3 font-mono text-slate-500 border-l border-slate-150">
+                              {result ? `+$${result.totals.derecho_poliza.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '—'}
+                            </td>
+                          );
+                        })}
+                      </tr>
+
+                      {/* Impuesto IVA */}
+                      <tr className="opacity-70 text-[11px]">
+                        <td className="p-3 text-slate-450 pl-6">Impuesto IVA (16%):</td>
+                        {multicotiOptions.map((opt, oIdx) => {
+                          const result = multicotiResultsByFreq[opt.id]?.[forma];
+                          return (
+                            <td key={opt.id} className="p-3 font-mono text-slate-500 border-l border-slate-150">
+                              {result ? `+$${result.totals.iva.toLocaleString('es-MX', { minimumFractionDigits: 2 })}` : '—'}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    </React.Fragment>
+                  );
+                })}
 
                 {/* Coverages table headers */}
                 <tr className="bg-slate-100/50">
@@ -1278,7 +1579,7 @@ export default function MulticotizadorGmmView({
                       <div className="text-[10px] text-slate-450 mt-1 leading-normal">{cov.desc}</div>
                     </td>
                     {multicotiOptions.map((opt, oIdx) => {
-                      const result = multicotiResults[oIdx];
+                      const result = multicotiResultsByFreq[opt.id]?.[selectedFormasPago[0]];
                       const status = getMatrixStatus(opt, result, cov.key);
                       return (
                         <td key={opt.id} className="p-4 border-l border-slate-150 bg-white">
@@ -1328,7 +1629,7 @@ export default function MulticotizadorGmmView({
 
           <button
             onClick={handleSaveWorkspace}
-            disabled={people.length === 0 || multicotiResults.length === 0 || isSaving}
+            disabled={people.length === 0 || Object.keys(multicotiResultsByFreq).length === 0 || isSaving}
             className="w-full mt-4 bg-slate-900 text-white rounded-xl py-2.5 hover:bg-slate-850 font-bold text-xs flex items-center justify-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             {isSaving ? (

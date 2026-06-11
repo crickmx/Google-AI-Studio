@@ -219,5 +219,6 @@ export interface MultiGmmQuote {
   results_json: any[];
   created_at: string;
   status: 'draft' | 'calculated' | 'pdf_generated' | 'deleted';
+  selected_formas_pago?: FormaPago[];
 }
 

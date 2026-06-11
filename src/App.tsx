@@ -85,7 +85,8 @@ export default function App() {
       bnv_forma_pago: 'Anual'
     }
   ]);
-  const [multicotiResults, setMulticotiResults] = useState<NormalizedResult[]>([]);
+  const [selectedFormasPago, setSelectedFormasPago] = useState<FormaPago[]>(['Anual']);
+  const [multicotiResultsByFreq, setMulticotiResultsByFreq] = useState<Record<string, Record<FormaPago, NormalizedResult>>>({});
   const [multicotiErrors, setMulticotiErrors] = useState<Record<string, string>>({});
   const [multicotiCalculating, setMulticotiCalculating] = useState(false);
   const [savedMultiGmmQuotes, setSavedMultiGmmQuotes] = useState<MultiGmmQuote[]>([]);
@@ -266,33 +267,58 @@ export default function App() {
 
   // Recalculate MultiGmm Options in real-time
   useEffect(() => {
-    if (activeProduct !== 'MULTICOTIZADOR' || people.length === 0) {
-      setMulticotiResults([]);
+    if (dbLoading || activeProduct !== 'MULTICOTIZADOR' || people.length === 0) {
+      setMulticotiResultsByFreq({});
       return;
     }
 
+    if (!activePackage || !activeBnpPackage) {
+      setMulticotiResultsByFreq({});
+      return;
+    }
+
+    let active = true;
+
     const runMultiCalculations = async () => {
       setMulticotiCalculating(true);
-      const results: NormalizedResult[] = [];
+      const resultsByFreq: Record<string, Record<FormaPago, NormalizedResult>> = {};
       const errors: Record<string, string> = {};
 
       for (const option of multicotiOptions) {
-        try {
-          const res = await calculateOption(option, people, activePackage, activeBnpPackage);
-          results.push(res);
-        } catch (error: any) {
-          console.error(`Error calculating option:`, error);
-          errors[option.id] = error?.message || 'Error de cálculo';
+        if (!active) return;
+        resultsByFreq[option.id] = {} as Record<FormaPago, NormalizedResult>;
+        for (const forma of selectedFormasPago) {
+          if (!active) return;
+          try {
+            const envOption: MultiGmmOptionConfig = {
+              ...option,
+              bx_forma_pago: forma,
+              bnv_forma_pago: forma,
+              bnp_forma_pago: forma
+            };
+            const res = await calculateOption(envOption, people, activePackage, activeBnpPackage);
+            if (!active) return;
+            resultsByFreq[option.id][forma] = res;
+          } catch (error: any) {
+            if (!active) return;
+            console.error(`Error calculating option for freq ${forma}:`, error);
+            errors[option.id] = error?.message || 'Error de cálculo';
+          }
         }
       }
 
-      setMulticotiResults(results);
+      if (!active) return;
+      setMulticotiResultsByFreq(resultsByFreq);
       setMulticotiErrors(errors);
       setMulticotiCalculating(false);
     };
 
     runMultiCalculations();
-  }, [activeProduct, multicotiOptions, people, activePackage, activeBnpPackage]);
+
+    return () => {
+      active = false;
+    };
+  }, [activeProduct, multicotiOptions, people, activePackage, activeBnpPackage, selectedFormasPago, dbLoading]);
 
   // Member management handlers
   const handleAddMember = (e: React.FormEvent) => {
@@ -503,7 +529,7 @@ export default function App() {
   };
 
   const handleSaveMultiGmmQuote = async () => {
-    if (people.length === 0 || multicotiResults.length === 0) return;
+    if (people.length === 0 || Object.keys(multicotiResultsByFreq).length === 0) return;
     setIsSavingQuote(true);
 
     const options_json = multicotiOptions.map((opt, index) => {
@@ -511,7 +537,7 @@ export default function App() {
         option_index: index + 1,
         product_id: opt.product_id,
         input_json: opt,
-        result_json: multicotiResults[index] || null,
+        result_json: multicotiResultsByFreq[opt.id] || null,
         tariff_package_id: opt.product_id === 'BNV' ? (activePackage?.id || '') : opt.product_id === 'BNP' ? (activeBnpPackage?.id || '') : 'bxplus_matrix_2026'
       };
     });
@@ -522,9 +548,10 @@ export default function App() {
       client_name: multiClientName.trim() || `Multicotización GMM de ${people[0]?.name || 'Cliente'}`,
       people_json: people,
       options_json,
-      results_json: multicotiResults,
+      results_json: Object.values(multicotiResultsByFreq),
       created_at: new Date().toISOString(),
-      status: 'calculated'
+      status: 'calculated',
+      selected_formas_pago: selectedFormasPago
     };
 
     try {
@@ -546,6 +573,11 @@ export default function App() {
     setPeople(q.people_json);
     const restoredOptions = q.options_json.map((o: any) => o.input_json);
     setMulticotiOptions(restoredOptions);
+    if (q.selected_formas_pago) {
+      setSelectedFormasPago(q.selected_formas_pago);
+    } else {
+      setSelectedFormasPago(['Anual']);
+    }
   };
 
   const handleDeleteSavedMultiQuote = async (id: string, e: React.MouseEvent) => {
@@ -620,48 +652,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Product Deck Switcher - Modern segmented layout */}
-      <div className="bg-white/40 border-b border-slate-150 px-4 md:px-8 py-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-slate-100/80 p-1 rounded-xl flex gap-1 max-w-md border border-slate-200/50">
-            <button
-              onClick={() => setActiveProduct('MULTICOTIZADOR')}
-              className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                activeProduct === 'MULTICOTIZADOR'
-                  ? 'bg-white text-emerald-700 shadow-sm font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Multicotizador GMM
-            </button>
-
-            <button
-              onClick={() => setActiveProduct('BNV')}
-              className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                activeProduct === 'BNV'
-                  ? 'bg-white text-teal-600 shadow-sm font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${activeProduct === 'BNV' ? 'bg-teal-500' : 'bg-slate-300'}`}></span>
-              Nacional Vital BNV
-            </button>
-
-            <button
-              onClick={() => setActiveProduct('BNP')}
-              className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                activeProduct === 'BNP'
-                  ? 'bg-white text-indigo-600 shadow-sm font-bold'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${activeProduct === 'BNP' ? 'bg-indigo-500' : 'bg-slate-300'}`}></span>
-              Nacional Plus BNP
-            </button>
-          </div>
-        </div>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 mt-8 space-y-8">
         
@@ -671,7 +661,7 @@ export default function App() {
             setPeople={setPeople}
             multicotiOptions={multicotiOptions}
             setMulticotiOptions={setMulticotiOptions}
-            multicotiResults={multicotiResults}
+            multicotiResultsByFreq={multicotiResultsByFreq}
             multicotiErrors={multicotiErrors}
             multicotiCalculating={multicotiCalculating}
             savedMultiGmmQuotes={savedMultiGmmQuotes}
@@ -681,10 +671,12 @@ export default function App() {
             isSaving={isSavingQuote}
             activePackage={activePackage}
             activeBnpPackage={activeBnpPackage}
+            selectedFormasPago={selectedFormasPago}
+            setSelectedFormasPago={setSelectedFormasPago}
           />
         ) : (
-          /* Core Cotizador Console Section */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="hidden">
+            {/* Legacy block disabled */}
           
           {/* Left Column: Input Panel */}
           <div className="lg:col-span-7 space-y-6">

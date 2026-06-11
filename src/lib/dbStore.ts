@@ -286,10 +286,11 @@ export function deleteQuote(id: string): Promise<void> {
   });
 }
 
-// Seeds default package if DB is empty
+// Seeds default package if DB is empty / incomplete
 export function seedDefaultPackageIfEmpty(): Promise<void> {
   return listPackages().then((pkgs) => {
-    if (pkgs.length > 0) return;
+    const existingDefaultPkg = pkgs.find(p => p.id === 'default_v1');
+    if (pkgs.length > 0 && existingDefaultPkg && (existingDefaultPkg.rates_count || 0) > 0) return;
 
     // Create a default tariff version
     const defaultPkg: TariffPackage = {
@@ -637,7 +638,8 @@ export function deleteBnpQuote(id: string): Promise<void> {
 
 export function seedDefaultBnpPackageIfEmpty(): Promise<void> {
   return listBnpPackages().then((pkgs) => {
-    if (pkgs.length > 0) return;
+    const existingDefaultBnpPkg = pkgs.find(p => p.id === 'bnp_default_v1');
+    if (pkgs.length > 0 && existingDefaultBnpPkg && (existingDefaultBnpPkg.rates_count || 0) > 0) return;
 
     const defaultBnpPkg: BnpTariffPackage = {
       id: 'bnp_default_v1',
