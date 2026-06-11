@@ -682,26 +682,6 @@ export default function MulticotizadorGmmView({
         </div>
       </div>
 
-      {/* Help & Benefits Highlight Banner */}
-      <div className="bg-gradient-to-r from-teal-50 to-indigo-50/70 border border-teal-100 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-white rounded-xl text-teal-600 shadow-sm shrink-0">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-slate-800 font-sans flex items-center gap-1.5 leading-snug">
-              Información de Coberturas & Beneficios Plus de Bupa
-            </h4>
-            <p className="text-[11px] text-slate-550 mt-1 leading-relaxed max-w-3xl">
-              Hemos integrado selectores inteligentes con <strong>ayuda flotante ⓘ</strong> al lado de cada parámetro para explicar detalladamente coberturas, deducibles, coaseguros y beneficios adicionales en Bupa y BX+. Además, tu cotización incluye de forma automática los <strong>Plus de Bupa</strong> (Telemedicina 24/7 de medicina general, nutrición y psicología, Check-Up preventivo sin costo y Monitoreo de salud AI).
-            </p>
-          </div>
-        </div>
-        <div className="bg-white border border-slate-205 text-slate-700 text-[10px] px-3 py-1.5 rounded-lg shrink-0 font-medium shadow-sm flex items-center gap-1">
-          <Info className="w-3.5 h-3.5 text-teal-600" />
-          <span>Soporte de Ayuda Activo</span>
-        </div>
-      </div>
 
       {/* STEP 2: Comparative Quote Options Deck */}
       <div className="space-y-4">
