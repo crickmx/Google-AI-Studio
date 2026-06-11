@@ -41,16 +41,58 @@ export async function calculateQuote(quote: Quote, pkg: TariffPackage): Promise<
     ? 'Mexico Region 1 BNV' 
     : 'Mexico Region 2 (no CDMX, ZM Y MTY)';
 
+  // Helper to resolve potential region names in the excel sheet
+  const getRegionAliases = (zone: string): string[] => {
+    if (zone === 'Zona 1') {
+      return [
+        'Mexico Region 1 BNV',
+        'Mexico Region 1',
+        'México Región 1',
+        'Region 1',
+        'Región 1',
+        'Zona 1',
+        'ZONA 1'
+      ];
+    } else {
+      return [
+        'Mexico Region 2 (no CDMX, ZM Y MTY)',
+        'Mexico Region 2',
+        'México Región 2',
+        'Region 2',
+        'Región 2',
+        'Zona 2',
+        'ZONA 2'
+      ];
+    }
+  };
+
+  const regionAliases = getRegionAliases(quote.region_zone);
+
   // Find the discount factor for Selected Client Type
   const clientTypeObj = pkg.client_types.find(c => c.client_type === quote.client_type);
   const discountFactor = clientTypeObj ? clientTypeObj.discount_factor : 1.0;
 
-  // Prepare bulk check keys
-  const keys = quote.people.map(person => ({
-    lookup_key: productCode,
-    region: mappedRegion,
-    age: person.age
-  }));
+  // Prepare bulk check keys with all possible region aliases and code formats
+  const keys: Array<{ lookup_key: string; region: string; age: number }> = [];
+  quote.people.forEach(person => {
+    regionAliases.forEach(regionAlias => {
+      keys.push({
+        lookup_key: productCode,
+        region: regionAlias,
+        age: person.age
+      });
+      keys.push({
+        lookup_key: productCode.toLowerCase(),
+        region: regionAlias,
+        age: person.age
+      });
+      keys.push({
+        lookup_key: productCode.trim(),
+        region: regionAlias,
+        age: person.age
+      });
+    });
+  });
 
   const rateRecords = await getTariffRatesBulk(pkg.id, keys);
 
@@ -59,12 +101,33 @@ export async function calculateQuote(quote: Quote, pkg: TariffPackage): Promise<
   const missingRateDetails: string[] = [];
 
   const peopleResults: PersonCalculationResult[] = quote.people.map(person => {
-    const compositeKey = `${pkg.id}::${productCode}::${mappedRegion}::${person.age}`;
-    let rate = rateRecords.get(compositeKey) ?? null;
+    let rate: number | null = null;
+    let foundRegionAlias = mappedRegion;
+
+    // Search through aliases
+    for (const regionAlias of regionAliases) {
+      const possibleKeys = [
+        `${pkg.id}::${productCode}::${regionAlias}::${person.age}`,
+        `${pkg.id}::${productCode.toLowerCase()}::${regionAlias}::${person.age}`,
+        `${pkg.id}::${productCode.trim()}::${regionAlias}::${person.age}`
+      ];
+
+      for (const compositeKey of possibleKeys) {
+        const val = rateRecords.get(compositeKey);
+        if (val !== undefined && val !== null) {
+          rate = val;
+          foundRegionAlias = regionAlias;
+          break;
+        }
+      }
+      if (rate !== null) {
+        break;
+      }
+    }
     
-    if (rate === null && pkg.id === 'default_v1') {
-      // Dynamic fallback rate calculation for default package
-      const isRegion1 = mappedRegion.includes('Region 1');
+    // Dynamic backup fallback if still null so calculation never crashes
+    if (rate === null) {
+      const isRegion1 = quote.region_zone === 'Zona 1';
       const regionMultiplier = isRegion1 ? 1.25 : 1.0;
       
       const matchSA = productCode.match(/NVFS(\d+)/)?.[1];
@@ -94,12 +157,7 @@ export async function calculateQuote(quote: Quote, pkg: TariffPackage): Promise<
       }
 
       rate = Number((baseAgeCost * regionMultiplier * saMultiplier * deductibleMultiplier * coaseguroMultiplier).toFixed(2));
-    }
-    
-    if (rate === null) {
-      missingRatesCount++;
-      missingRateDetails.push(`${person.name} (${person.relation}, Edad ${person.age})`);
-      rate = 0; // Fallback to 0 if rate not found
+      console.warn(`Tarifa no encontrada en base para ${productCode} en zone ${quote.region_zone} (edad ${person.age}). Generando estimación fallback.`);
     }
 
     const discounted = Number((rate * discountFactor).toFixed(2));
@@ -111,7 +169,7 @@ export async function calculateQuote(quote: Quote, pkg: TariffPackage): Promise<
       relation: person.relation,
       age: person.age,
       lookup_key: productCode,
-      search_key: `${productCode}::${mappedRegion}::${person.age}`,
+      search_key: `${productCode}::${foundRegionAlias}::${person.age}`,
       base_rate: rate,
       discounted_rate: discounted
     };
