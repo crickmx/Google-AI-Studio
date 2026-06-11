@@ -1,0 +1,6 @@
+{
+  "name": "Cotizador GMM Bupa México (BNV & BNP)",
+  "description": "Consola independiente de cotización, carga de tarifas de Excel, diagnóstico detallado y validación de coincidencia al centavo para Bupa Nacional Vital (BNV) y Bupa Nacional Plus (BNP).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
